@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="ebad1d17-a8d3-4a22-8ec8-c114ce5dd241" >
+		<http:listener-connection host="0.0.0.0" port="8082"/>
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="f2ebbd0d-eeef-454e-bbec-80dcf43866b4" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="123456" database="example" />
+	</db:config>
+	<salesforce:sfdc-config name="Salesforce_Config" doc:name="Salesforce Config" doc:id="314aeb60-dd43-4a4f-a01b-2e00c89e57f4" >
+		<salesforce:basic-connection username="asalakshmansai@gmail.com" password="alakshman1904" securityToken="sIa0RkMZCUnOVSNrFBGqgemr" />
+	</salesforce:sfdc-config>
+	<salesforce:sfdc-config name="Salesforce_Config1" doc:name="Salesforce Config" doc:id="47c54564-cc46-4366-b25d-5fd82a1c10d3" >
+		<salesforce:jwt-connection consumerKey="3MVG9n_HvETGhr3A428dBAd428ZpJIJD77mO0VCJ18maUoGgMKAs9C0WLt2fy3I_rXigZy8sdhUMl1EH_nXr3" keyStore="00D2w00000MhIZe.jks" storePassword="mulesoft" principal="asalakshmansai@gmail.com"/>
+	</salesforce:sfdc-config>
+	<salesforce:sfdc-config name="Salesforce_Config2" doc:name="Salesforce Config" doc:id="2203770e-54d0-46de-b382-ab4afc6e6f56" >
+		<salesforce:jwt-connection consumerKey="3MVG9n_HvETGhr3A428dBAd428VpZFyhvkFnGEVvJeuAcaskNyd.L_hqbGtxq_ihgio.43rzYMvA5tdbBCWrU" keyStore="C:\Users\Admin\Downloads\00D2w00000MhIZe.jks" storePassword="mulesoft" principal="asalakshmansai@gmail.com" />
+	</salesforce:sfdc-config>
+	<db:config name="Database_Config1" doc:name="Database Config" doc:id="c7937c4c-d6ce-4d83-843e-857cb94b677f" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="123456" database="jms" />
+	</db:config>
+	<flow name="paginationFlow" doc:id="13a9acc1-833b-45b7-b3d3-3dd5c81e3f12" >
+		<http:listener doc:name="Listener" doc:id="4e1b3463-5694-4d49-a686-9553423153a2" config-ref="HTTP_Listener_config" path="/db"/>
+		<choice doc:name="Choice" doc:id="b019add5-cad0-4cc0-ad58-975ff824af72" >
+			<when expression="#[(attributes.queryParams.limit != null) and (attributes.queryParams.offset != null)]">
+				<ee:transform doc:name="Transform Message" doc:id="5ad98ad1-8ae0-48f0-8845-8d9ae6002b08">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"query": "SELECT * FROM table3  LIMIT " ++ attributes.queryParams.limit ++ " OFFSET " ++ attributes.queryParams.offset
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+				<db:select doc:name="Select" doc:id="18466de9-4b7d-4c73-ac3b-0066ccd11d43" config-ref="Database_Config">
+			<db:sql><![CDATA[SELECT * FROM example.table3 LIMIT :LIMIT  OFFSET :OFFSET]]></db:sql>
+					<db:input-parameters ><![CDATA[#[{
+	'LIMIT': payload.LIMIT,
+	'OFFSET': payload.OFFSET
+}]]]></db:input-parameters>
+		</db:select>
+			</when>
+			<otherwise >
+				<db:select doc:name="Select" doc:id="a3c0d6e9-52c3-4b6d-99d5-a8aad16616aa" config-ref="Database_Config">
+					<db:sql ><![CDATA[select * from table3]]></db:sql>
+				</db:select>
+			</otherwise>
+		</choice>
+		<ee:transform doc:name="Transform Message" doc:id="c117390f-7b9a-417e-9bc6-f6be817aedda" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="paginationFlow1" doc:id="d359d9e7-64f8-42cf-b093-1c4778240e76" >
+		<http:listener doc:name="Listener" doc:id="84b178b9-0aac-46c7-bb66-3beb77ea6757" config-ref="HTTP_Listener_config" path="/db1"/>
+		<db:select doc:name="Select" doc:id="bcfd7212-3ac2-4d55-b44d-6de5b2bbf65f" config-ref="Database_Config">
+			<db:sql ><![CDATA[SELECT * FROM example.table3 LIMIT :LIMIT  OFFSET :OFFSET]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	'LIMIT': attributes.queryParams.limit as Number,
+	'OFFSET': attributes.queryParams.offset as Number
+}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="7ed30a6b-f30a-4169-88ab-1b4b592b3484" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="paginationFlow2" doc:id="195a6184-3795-44a3-961a-0872c29dd6f5" >
+		<http:listener doc:name="Listener" doc:id="c9914bbd-0d42-411d-a324-0305ca724111" config-ref="HTTP_Listener_config" path="/db2"/>
+		<db:select doc:name="Select" doc:id="b007d9ef-3e95-47ee-8a32-af0538a96064" config-ref="Database_Config">
+			<db:sql ><![CDATA[SELECT * FROM table3  where LIMIT =:lim and  OFFSET =:off;]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{lim: attributes.queryParams.limit,
+	off: attributes.queryParams.offset
+}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="37b7377d-c3c6-433f-99ed-fd7c797383bc" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="paginationFlow3" doc:id="cd89e98b-f276-488a-96f7-62603af8dbbc" >
+		<http:listener doc:name="Listener" doc:id="0456ff54-66ac-45e8-aaea-d997d4db5edd" config-ref="HTTP_Listener_config" path="/is"/>
+		<set-payload value='#["before"]' doc:name="Set Payload" doc:id="8091bbf6-2f68-4340-b7e6-6b04938319ae" />
+		<validation:is-null doc:name="Is null" doc:id="08f39fd5-ad4f-4224-a075-bb94f5a88a8a" value="#[payload]"/>
+		<set-payload value='#["after"]' doc:name="Set Payload" doc:id="972ae5fa-ff60-4d3a-b51c-8aad1c7a32ee" />
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="24e1e7cf-6c18-4b43-90bf-79d40d062905" >
+				<set-payload value="#[payload]" doc:name="Set Payload" doc:id="de45dcef-40cf-4a05-85a4-cdf080e2cde2" />
+			</on-error-continue>
+		</error-handler>
+	</flow>
+	<flow name="paginationFlow4" doc:id="c3c83d58-ecce-4154-bcc3-487dba582dd9" >
+		<http:listener doc:name="Listener" doc:id="a60950f7-485d-4fa6-a37b-55f1e16e4a0e" config-ref="HTTP_Listener_config" path="/sf"/>
+		<ee:transform doc:name="Transform Message" doc:id="588f087d-f204-436c-a788-21aa4e0dbfbd" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+if((!isEmpty(attributes.queryParams.limit)) and (!isEmpty(attributes.queryParams.offset)))
+{
+	query: [{"query": "select id__c,Name from student__c LIMIT " ++ attributes.queryParams.limit as Number ++ " OFFSET " ++ attributes.queryParams.offset as Number}]
+}
+else
+{
+query: [{"query": "select id__c, Name from student__c"}]	
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Transform Message" doc:id="88a37eb0-fb56-47bd-8952-7814c86c0a69" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload.query]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<foreach doc:name="For Each" doc:id="f9d0a432-9c3d-47eb-8e50-93b7437d5f25" >
+			<salesforce:query doc:name="Query" doc:id="f5f8f315-0628-46ce-8e83-e7f698a30928" config-ref="Salesforce_Config">
+				<salesforce:salesforce-query><![CDATA[#[payload.query]]]></salesforce:salesforce-query>
+			</salesforce:query>
+			<set-variable value="#[(vars.success default []) + payload]" doc:name="Set Variable" doc:id="76e22a11-cd2d-4f81-aaff-5ba111ee9830" variableName="success" />
+		</foreach>
+		<ee:transform doc:name="Transform Message" doc:id="6d4a0e43-880e-4c93-bd33-cd2348c5b12a">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+vars.success]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="paginationFlow5" doc:id="d6d3710e-acd7-4ccd-9054-bc3ddab84abe" >
+		<http:listener doc:name="Listener" doc:id="cfd81561-6e8e-460f-aa68-fff61484ee60" config-ref="HTTP_Listener_config" path="/ani"/>
+		<db:insert doc:name="Insert" doc:id="06205bbb-78a5-4b1f-bcba-f654b8636c5f" config-ref="Database_Config1">
+			<db:sql ><![CDATA[insert into jms values( #[payload.id],#[payload.name])]]></db:sql>
+		</db:insert>
+		<ee:transform doc:name="Transform Message" doc:id="eec1d278-4d35-40c7-bde1-c5aee9759fff">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
